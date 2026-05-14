@@ -1,3 +1,11 @@
+// Sanitize user input to prevent XSS attacks
+function sanitizeInput(str) {
+    if (typeof str !== 'string') return str;
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // Toggle hamburger menu
 function toggleMenu() {
     const navMenu = document.getElementById('navMenu');
@@ -38,8 +46,40 @@ async function handleBooking(event) {
         return;
     }
     
-    // Create FormData object
+    // Create FormData object and sanitize text inputs
     const formData = new FormData(form);
+    const name = sanitizeInput(formData.get('name') || '');
+    const email = sanitizeInput(formData.get('email') || '');
+    const phone = sanitizeInput(formData.get('phone') || '');
+    const brand = sanitizeInput(formData.get('brand') || '');
+    const description = sanitizeInput(formData.get('description') || '');
+    
+    // Validate sanitized data
+    if (!name || !email || !phone || !brand || !description) {
+        showMessage('Please fill in all required fields.', 'error');
+        return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showMessage('Please enter a valid email address.', 'error');
+        return;
+    }
+    
+    // Phone validation (Australian format or international)
+    const phoneRegex = /^[\d\s+\-()]+$/;
+    if (!phoneRegex.test(phone) || phone.replace(/\D/g, '').length < 8) {
+        showMessage('Please enter a valid phone number.', 'error');
+        return;
+    }
+    
+    // Update FormData with sanitized values
+    formData.set('name', name);
+    formData.set('email', email);
+    formData.set('phone', phone);
+    formData.set('brand', brand);
+    formData.set('description', description);
     formData.set('serviceType', serviceType);
     
     try {
@@ -58,8 +98,8 @@ async function handleBooking(event) {
             showMessage('An error occurred. Please try again.', 'error');
         }
     } catch (error) {
-        console.error('Error:', error);
-        showMessage('An error occurred. Please try again.', 'error');
+        console.error('Booking submission error:', error);
+        showMessage('An error occurred. Please try again later.', 'error');
     }
 }
 
